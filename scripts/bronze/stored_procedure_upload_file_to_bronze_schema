@@ -1,9 +1,9 @@
 /*
 =========================================================
-Create and load files into the bronze schema
+Stored Procedure: Load Bronze Layer (Source --- Bronze)
 ===========================================================
 Script Purpose:
-This script creates and load procedure to upload files into the tables in the bronze schema.
+This stored procedure loads data into the bronze schema from external CSV files. 
 */
 
 -- Load bronze data
