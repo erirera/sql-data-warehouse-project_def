@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS bronze.erp_px_cat_g1v2
     id character varying(10) COLLATE pg_catalog."default",
     cat character varying(50) COLLATE pg_catalog."default",
     subcat character varying(100) COLLATE pg_catalog."default",
-    maintenance boolean
+    maintenance text
 )
 TABLESPACE pg_default;
 ALTER TABLE IF EXISTS bronze.erp_px_cat_g1v2
