@@ -134,6 +134,84 @@ TABLESPACE pg_default;
 ALTER TABLE IF EXISTS bronze.erp_px_cat_g1v2
     OWNER to postgres;
 
+--Initialize bronze_schema
+CREATE OR REPLACE PROCEDURE initialize_bronze_schema()
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Customer Info
+    DROP TABLE IF EXISTS bronze.crm_cust_info;
+    CREATE TABLE IF NOT EXISTS bronze.crm_cust_info (
+        cst_id INTEGER,
+        cst_key VARCHAR(50),
+        cst_firstname VARCHAR(50),
+        cst_lastname VARCHAR(50),
+        cst_marital_status CHAR(1),
+        cst_gndr CHAR(1),
+        cst_create_date DATE
+    ) TABLESPACE pg_default;
+    ALTER TABLE IF EXISTS bronze.crm_cust_info OWNER TO postgres;
+
+    -- Product Info
+    DROP TABLE IF EXISTS bronze.crm_prd_info;
+    CREATE TABLE IF NOT EXISTS bronze.crm_prd_info (
+        prd_id INTEGER,
+        prd_key VARCHAR(30),
+        prd_nm VARCHAR(100),
+        prd_cost NUMERIC(10,2),
+        prd_line CHAR(1),
+        prd_start_dt DATE,
+        prd_end_dt DATE
+    ) TABLESPACE pg_default;
+    ALTER TABLE IF EXISTS bronze.crm_prd_info OWNER TO postgres;
+
+    -- Sales Details
+    DROP TABLE IF EXISTS bronze.crm_sales_details;
+    CREATE TABLE IF NOT EXISTS bronze.crm_sales_details (
+        sls_ord_num VARCHAR(20),
+        sls_prd_key VARCHAR(30),
+        sls_cust_id INTEGER,
+        sls_order_dt TEXT,
+        sls_ship_dt DATE,
+        sls_due_dt DATE,
+        sls_sales NUMERIC(10,2),
+        sls_quantity INTEGER,
+        sls_price NUMERIC(10,2)
+    ) TABLESPACE pg_default;
+    ALTER TABLE IF EXISTS bronze.crm_sales_details OWNER TO postgres;
+
+    -- ERP Customer Demographics
+    DROP TABLE IF EXISTS bronze.erp_cust_az12;
+    CREATE TABLE IF NOT EXISTS bronze.erp_cust_az12 (
+        cid VARCHAR(20),
+        bdate DATE,
+        gen VARCHAR(10)
+    ) TABLESPACE pg_default;
+    ALTER TABLE IF EXISTS bronze.erp_cust_az12 OWNER TO postgres;
+
+    -- ERP Location
+    DROP TABLE IF EXISTS bronze.erp_loc_a101;
+    CREATE TABLE IF NOT EXISTS bronze.erp_loc_a101 (
+        cid VARCHAR(20),
+        cntry VARCHAR(50)
+    ) TABLESPACE pg_default;
+    ALTER TABLE IF EXISTS bronze.erp_loc_a101 OWNER TO postgres;
+
+    -- ERP Product Category
+    DROP TABLE IF EXISTS bronze.erp_px_cat_g1v2;
+    CREATE TABLE IF NOT EXISTS bronze.erp_px_cat_g1v2 (
+        id VARCHAR(10),
+        cat VARCHAR(50),
+        subcat VARCHAR(100),
+        maintenance TEXT
+    ) TABLESPACE pg_default;
+    ALTER TABLE IF EXISTS bronze.erp_px_cat_g1v2 OWNER TO postgres;
+END;
+$$;
+--To Execute 
+CALL initialize_bronze_schema();
+
+-- Load bronze data
 CREATE OR REPLACE PROCEDURE load_bronze_data()
 LANGUAGE plpgsql
 AS $$
@@ -169,4 +247,5 @@ BEGIN
     WITH (FORMAT csv, DELIMITER ',', HEADER, ENCODING 'UTF8', QUOTE '"', ESCAPE '''', ON_ERROR ignore, LOG_VERBOSITY default);
 END;
 $$;
+--To Execute 
 CALL load_bronze_data();
