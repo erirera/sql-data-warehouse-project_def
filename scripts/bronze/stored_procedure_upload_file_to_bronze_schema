@@ -1,1 +1,47 @@
+/*
+=========================================================
+Create and load files into the bronze schema
+===========================================================
+Script Purpose:
+This script creates and load procedure to upload files into the tables in the bronze schema.
+*/
+
+-- Load bronze data
+CREATE OR REPLACE PROCEDURE load_bronze_data()
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Load customer info
+    COPY bronze.crm_cust_info(cst_id, cst_key, cst_firstname, cst_lastname, cst_marital_status, cst_gndr, cst_create_date)
+    FROM 'C:/meq/Personal/PERSON~1/DATASC~1/BUILDI~1/SQL-DA~1/datasets/SOURCE~1/CUST_I~1.CSV'
+    WITH (FORMAT csv, DELIMITER ',', HEADER, ENCODING 'UTF8', QUOTE '"', ESCAPE '''');
+
+    -- Load product info
+    COPY bronze.crm_prd_info(prd_id, prd_key, prd_nm, prd_cost, prd_line, prd_start_dt, prd_end_dt)
+    FROM 'C:/meq/Personal/PERSON~1/DATASC~1/BUILDI~1/SQL-DA~1/datasets/SOURCE~1/prd_info.csv'
+    WITH (FORMAT csv, DELIMITER ',', HEADER, ENCODING 'UTF8', QUOTE '"', ESCAPE '''');
+
+    -- Load ERP customer demographics
+    COPY bronze.erp_cust_az12(cid, bdate, gen)
+    FROM 'C:/meq/Personal/PERSON~1/DATASC~1/BUILDI~1/SQL-DA~1/datasets/SOURCE~2/CUST_A~1.CSV'
+    WITH (FORMAT csv, DELIMITER ',', HEADER, ENCODING 'UTF8', QUOTE '"', ESCAPE '''', ON_ERROR ignore, LOG_VERBOSITY default);
+
+    -- Load ERP product categories
+    COPY bronze.erp_px_cat_g1v2(id, cat, subcat, maintenance)
+    FROM 'C:/meq/Personal/PERSON~1/DATASC~1/BUILDI~1/SQL-DA~1/datasets/SOURCE~2/PX_CAT~1.CSV'
+    WITH (FORMAT csv, DELIMITER ',', HEADER, ENCODING 'UTF8', QUOTE '"', ESCAPE '''', ON_ERROR ignore, LOG_VERBOSITY default);
+
+    -- Load CRM sales details
+    COPY bronze.crm_sales_details(sls_ord_num, sls_prd_key, sls_cust_id, sls_order_dt, sls_ship_dt, sls_due_dt, sls_sales, sls_quantity, sls_price)
+    FROM 'C:/meq/Personal/PERSON~1/DATASC~1/BUILDI~1/SQL-DA~1/datasets/SOURCE~1/SALES_~1.CSV'
+    WITH (FORMAT csv, DELIMITER ',', HEADER, ENCODING 'UTF8', QUOTE '"', ESCAPE '''');
+
+    -- Load ERP location data
+    COPY bronze.erp_loc_a101(cid, cntry)
+    FROM 'C:/meq/Personal/PERSON~1/DATASC~1/BUILDI~1/SQL-DA~1/datasets/SOURCE~2/loc_a101.csv'
+    WITH (FORMAT csv, DELIMITER ',', HEADER, ENCODING 'UTF8', QUOTE '"', ESCAPE '''', ON_ERROR ignore, LOG_VERBOSITY default);
+END;
+$$;
+--To Execute 
+CALL load_bronze_data();
 
