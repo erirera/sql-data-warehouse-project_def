@@ -8,3 +8,166 @@ GROUP BY
 	CST_ID
 HAVING
 	COUNT(*) > 1 OR CST_ID IS NULL;
+
+-- Check affected rows one-by-one
+SELECT
+	*
+FROM
+	BRONZE.CRM_CUST_INFO
+WHERE CST_ID = 29466;
+
+-- OR
+SELECT
+	*,
+	ROW_NUMBER() OVER (
+		PARTITION BY
+			CST_ID
+		ORDER BY
+			CST_CREATE_DATE DESC
+	) AS FLAG_LAST
+FROM
+	BRONZE.CRM_CUST_INFO
+WHERE CST_ID = 29466;
+
+
+-- Check for null or duplicates in primary key
+SELECT
+	*,
+	ROW_NUMBER() OVER (
+		PARTITION BY
+			CST_ID
+		ORDER BY
+			CST_CREATE_DATE DESC
+	) AS FLAG_LAST
+FROM
+	BRONZE.CRM_CUST_INFO;
+
+SELECT * FROM 
+(SELECT
+	*,
+	ROW_NUMBER() OVER (
+		PARTITION BY
+			CST_ID
+		ORDER BY
+			CST_CREATE_DATE DESC
+	) AS FLAG_LAST
+FROM
+	BRONZE.CRM_CUST_INFO)t where flag_last <>1;
+
+SELECT * FROM 
+(SELECT
+	*,
+	ROW_NUMBER() OVER (
+		PARTITION BY
+			CST_ID
+		ORDER BY
+			CST_CREATE_DATE DESC
+	) AS FLAG_LAST
+FROM
+	BRONZE.CRM_CUST_INFO)t where flag_last =1;
+
+-- Check for unwanted spaces in string values
+SELECT
+    cst_firstname
+FROM
+    bronze.crm_cust_info
+WHERE
+    cst_firstname <> TRIM(cst_firstname);
+
+SELECT
+    cst_lastname
+FROM
+    bronze.crm_cust_info
+WHERE
+    cst_lastname <> TRIM(cst_lastname);
+
+-- Check for null or duplicates in primary key and trim spaces in strings
+SELECT 
+cst_id,
+    cst_key,
+    trim (cst_firstname) as cst_firstname,
+    trim (cst_lastname) as cst_lastname,
+    cst_marital_status,
+    cst_gndr,
+    cst_create_date
+FROM 
+(SELECT
+	*,
+	ROW_NUMBER() OVER (
+		PARTITION BY
+			CST_ID
+		ORDER BY
+			CST_CREATE_DATE DESC
+	) AS FLAG_LAST
+FROM
+	BRONZE.CRM_CUST_INFO)t where flag_last =1;
+
+-- Data Standardization and Consistency
+INSERT INTO
+	SILVER.CRM_CUST_INFO (
+		CST_ID,
+		CST_KEY,
+		CST_FIRSTNAME,
+		CST_LASTNAME,
+		CST_MARITAL_STATUS,
+		CST_GNDR,
+		CST_CREATE_DATE
+	)
+SELECT
+	CST_ID,
+	CST_KEY,
+	TRIM(CST_FIRSTNAME) AS CST_FIRSTNAME,
+	TRIM(CST_LASTNAME) AS CST_LASTNAME,
+	CASE
+		WHEN UPPER(CST_MARITAL_STATUS) = 'S' THEN 'Single'
+		WHEN UPPER(CST_MARITAL_STATUS) = 'M' THEN 'Married'
+		ELSE 'N/A'
+	END AS CST_MARITAL_STATUS,
+	CASE
+		WHEN UPPER(CST_GNDR) = 'F' THEN 'female'
+		WHEN UPPER(CST_GNDR) = 'M' THEN 'Male'
+		ELSE 'N/A'
+	END AS CST_GNDR,
+	CST_CREATE_DATE
+FROM
+	(
+		SELECT
+			*,
+			ROW_NUMBER() OVER (
+				PARTITION BY
+					CST_ID
+				ORDER BY
+					CST_CREATE_DATE DESC
+			) AS FLAG_LAST
+		FROM
+			BRONZE.CRM_CUST_INFO
+	) AS T
+WHERE
+	FLAG_LAST = 1;
+
+sERVER-SIDE 
+COPY target_table (column1, column2, ...)
+FROM '/absolute/path/to/file.csv'
+WITH (
+  FORMAT csv,
+  HEADER true,
+  DELIMITER ',',
+  ENCODING 'UTF8'
+
+\COPY target_table (column1, column2, ...)
+FROM '/local/path/to/file.csv'
+WITH (
+  FORMAT csv,
+  HEADER true,
+  DELIMITER ',',
+  ENCODING 'UTF8'
+);
+
+INSERT INTO final_table (col1, col2)
+SELECT col1, col2
+FROM staging_table
+LIMIT 50000;
+);
+SELECT DISTINCT CST_MARITAL_STATUS
+FROM
+BRONZE.CRM_CUST_INFO;
