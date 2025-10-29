@@ -1,3 +1,10 @@
+/*
+============================================================================
+This script creates multiple tables in the silver schema, 
+including customer, product, sales details, and ERP-related tables, 
+with appropriate columns and data types.
+============================================================================
+*/
 -- Table: silver.crm_cust_info
 
 DROP TABLE IF EXISTS silver.crm_cust_info;
