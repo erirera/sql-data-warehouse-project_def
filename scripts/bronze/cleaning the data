@@ -1,1 +1,10 @@
-
+-- Check for null or duplicates in primary key
+SELECT
+	CST_ID,
+	COUNT(*)
+FROM
+	BRONZE.CRM_CUST_INFO
+GROUP BY
+	CST_ID
+HAVING
+	COUNT(*) > 1;
