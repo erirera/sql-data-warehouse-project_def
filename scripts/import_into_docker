@@ -1,6 +1,16 @@
 ======================================
 Importing files into Docker Desktop running an active postgres
 =========================================
+to stop a running container and restart with uploaded files
+===========================================
+docker stop pg          
+docker rm pg          
+docker run \
+  --name pg \        
+  -e POSTGRES_PASSWORD=mysecretpassword \
+  -v /Users/macmini4/Documents/sql-data-warehouse-project/datasets:/import_data:ro \
+  -p 5432:5432 \
+  -d postgres
 
 docker cp /Users/macmini4/Documents/sql-data-warehouse-project/datasets/source_crm pg:/import_data 
 Successfully copied 4.47MB to pg:/import_data
