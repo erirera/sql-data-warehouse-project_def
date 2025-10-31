@@ -1,0 +1,9 @@
+======================================
+Importing files into Docker Desktop running an active postgres
+=========================================
+
+docker cp /Users/macmini4/Documents/sql-data-warehouse-project/datasets/source_crm pg:/import_data 
+Successfully copied 4.47MB to pg:/import_data
+macmini4@MacMini4s-Mac-mini ~ % docker cp /Users/macmini4/Documents/sql-data-warehouse-project/datasets/source_erp pg:/import_data 
+Successfully copied 976kB to pg:/import_data
+macmini4@MacMini4s-Mac-mini ~ % 
