@@ -104,7 +104,11 @@ FROM
 FROM
 	BRONZE.CRM_CUST_INFO)t where flag_last =1;
 
--- Data Standardization and Consistency 
+-- DATA STANDARDIZATION & CONSISTENCY 
+-- removing unwanted spaces, maps coded values to meaningful, 
+-- user-friendly descriptions (i.e. data normalization & standardization)
+-- handling missing values (fill in the blanks by adding a default value)
+-- ensuring only one record per entity by removing duplicates (identify and retaining the most relevant rows.
 --(in doing this, there may be need to increase the character-length of the target columns)
 INSERT INTO
 	SILVER.CRM_CUST_INFO (
@@ -122,13 +126,13 @@ SELECT
 	TRIM(CST_FIRSTNAME) AS CST_FIRSTNAME,
 	TRIM(CST_LASTNAME) AS CST_LASTNAME,
 	CASE
-		WHEN UPPER(CST_MARITAL_STATUS) = 'S' THEN 'Single'
-		WHEN UPPER(CST_MARITAL_STATUS) = 'M' THEN 'Married'
+		WHEN UPPER(TRIM(CST_MARITAL_STATUS)) = 'S' THEN 'Single'
+		WHEN UPPER(TRIM(CST_MARITAL_STATUS)) = 'M' THEN 'Married'
 		ELSE 'N/A'
 	END AS CST_MARITAL_STATUS,
 	CASE
-		WHEN UPPER(CST_GNDR) = 'F' THEN 'female'
-		WHEN UPPER(CST_GNDR) = 'M' THEN 'Male'
+		WHEN UPPER(TRIM(CST_GNDR)) = 'F' THEN 'female'
+		WHEN UPPER(TRIM(CST_GNDR)) = 'M' THEN 'Male'
 		ELSE 'N/A'
 	END AS CST_GNDR,
 	CST_CREATE_DATE
@@ -147,3 +151,24 @@ FROM
 	) AS T
 WHERE
 	FLAG_LAST = 1;
+
+
+--FOR PRODUCT INFO AND CONSIDERATION THE RELATED SOURCE DATA
+	
+SELECT
+	PRD_ID,
+	PRD_KEY,
+	REPLACE (SUBSTRING(PRD_KEY, 1, 5), '-','_') AS CAT_ID,
+	PRD_NM,
+	PRD_COST,
+	PRD_LINE,
+	PRD_START_DT,
+	PRD_END_DT
+FROM
+	BRONZE.CRM_PRD_INFO
+	ORDER BY CAT_ID;
+
+SELECT DISTINCT
+	ID
+FROM
+	BRONZE.ERP_PX_CAT_G1V2;
