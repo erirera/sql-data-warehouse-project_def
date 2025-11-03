@@ -102,7 +102,8 @@ FROM
 FROM
 	BRONZE.CRM_CUST_INFO)t where flag_last =1;
 
--- Data Standardization and Consistency
+-- Data Standardization and Consistency 
+--(in doing this, there may be need to increase the character-length of the target columns)
 INSERT INTO
 	SILVER.CRM_CUST_INFO (
 		CST_ID,
@@ -144,30 +145,3 @@ FROM
 	) AS T
 WHERE
 	FLAG_LAST = 1;
-
-sERVER-SIDE 
-COPY target_table (column1, column2, ...)
-FROM '/absolute/path/to/file.csv'
-WITH (
-  FORMAT csv,
-  HEADER true,
-  DELIMITER ',',
-  ENCODING 'UTF8'
-
-\COPY target_table (column1, column2, ...)
-FROM '/local/path/to/file.csv'
-WITH (
-  FORMAT csv,
-  HEADER true,
-  DELIMITER ',',
-  ENCODING 'UTF8'
-);
-
-INSERT INTO final_table (col1, col2)
-SELECT col1, col2
-FROM staging_table
-LIMIT 50000;
-);
-SELECT DISTINCT CST_MARITAL_STATUS
-FROM
-BRONZE.CRM_CUST_INFO;
