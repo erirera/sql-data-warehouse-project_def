@@ -82,6 +82,8 @@ WHERE
     cst_lastname <> TRIM(cst_lastname);
 
 -- Check for null or duplicates in primary key and trim spaces in strings
+-- we can say
+-- select distinct cst_gender from bronze.crm_cust_info; to show the possible distinct values within the column
 SELECT 
 cst_id,
     cst_key,
