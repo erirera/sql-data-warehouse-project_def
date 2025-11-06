@@ -329,7 +329,11 @@ SELECT
 		ELSE 'N/A'
 	END AS PRD_LINE,
 	PRD_START_DT,
-	PRD_END_DT
+	-- LEAD returns the next row's prd_start_dt within the same prd_key ordered by prd_start_dt
+    LEAD(prd_start_dt) OVER (
+        PARTITION BY prd_key
+        ORDER BY prd_start_dt
+    )-1 AS prd_end_dt
 FROM
 	BRONZE.CRM_PRD_INFO;
 	-- to filter out unmatched data after applying transformation
@@ -377,7 +381,7 @@ WHERE
 -- Each record must have a start date
 -- Solution 1, swap the end date and start date
 -- Solution 2, derive end date from the start date from a few data records in excel. That means end date = start date fo the next record
-
+-- testing for only two cases
 SELECT
     prd_id,
     prd_key,
@@ -388,8 +392,24 @@ SELECT
     LEAD(prd_start_dt) OVER (
         PARTITION BY prd_key
         ORDER BY prd_start_dt
-    ) AS prd_end_dt_test
+    )-1 AS prd_end_dt_test
 FROM
     bronze.crm_prd_info
 WHERE
     prd_key IN ('AC-HE-HL-U509-R', 'AC-HE-HL-U509');
+
+--testing for the whole case
+SELECT
+    prd_id,
+    prd_key,
+    prd_nm,
+    prd_start_dt,
+    -- LEAD returns the next row's prd_start_dt within the same prd_key ordered by prd_start_dt
+    LEAD(prd_start_dt) OVER (
+        PARTITION BY prd_key
+        ORDER BY prd_start_dt
+    )-1 AS prd_end_dt
+FROM
+    bronze.crm_prd_info;
+
+-- FINAL RESULT OF CLEANING PRODUCT INFO AND INSERTING TO I
