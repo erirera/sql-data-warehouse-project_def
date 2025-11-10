@@ -1,3 +1,10 @@
+Use PostgreSQL's correct COPY/\copy CSV syntax. Here are two valid options — a client-side psql \copy (runs as your OS user, uses the client file path) and the server-side COPY (file must be readable by the Postgres server process).
+
+Client-side (psql) \copy — recommended for local files: \copy bronze.crm_sales_details (sls_ord_num, sls_prd_key, sls_cust_id, sls_order_dt, sls_ship_dt, sls_due_dt, sls_sales, sls_quantity, sls_price) FROM '/Users/macmini4/Documents/sql-data-warehouse-project/datasets/source_crm/sales_details.csv' WITH (FORMAT csv, DELIMITER ',', HEADER true, QUOTE '"' , ESCAPE E'\');
+
+Server-side COPY (runs as the postgres server user — file must be accessible to the server): COPY bronze.crm_sales_details (sls_ord_num, sls_prd_key, sls_cust_id, sls_order_dt, sls_ship_dt, sls_due_dt, sls_sales, sls_quantity, sls_price) FROM '/Users/macmini4/Documents/sql-data-warehouse-project/datasets/source_crm/sales_details.csv' WITH (FORMAT csv, DELIMITER ',', HEADER true, QUOTE '"' , ESCAPE E'\');
+
+
 /*
 =========================================================
 Stored Procedure: Load Bronze Layer (Source --- Bronze)
