@@ -45,3 +45,111 @@ FROM
 	) AS T
 WHERE
 	FLAG_LAST = 1;
+
+
+--- THE 47 LINES ABOVE CAME FROM THE LINES BELOW
+-- Check for null or duplicates in primary key
+SELECT
+	CST_ID,
+	COUNT(*)
+FROM
+	BRONZE.CRM_CUST_INFO
+GROUP BY
+	CST_ID
+HAVING
+	COUNT(*) > 1 OR CST_ID IS NULL;
+
+-- Check affected rows one-by-one
+SELECT
+	*
+FROM
+	BRONZE.CRM_CUST_INFO
+WHERE CST_ID = 29466;
+
+-- OR
+SELECT
+	*,
+	ROW_NUMBER() OVER (
+		PARTITION BY
+			CST_ID
+		ORDER BY
+			CST_CREATE_DATE DESC
+	) AS FLAG_LAST
+FROM
+	BRONZE.CRM_CUST_INFO
+WHERE CST_ID = 29466;
+
+
+-- Check for null or duplicates in primary key
+SELECT
+	*,
+	ROW_NUMBER() OVER (
+		PARTITION BY
+			CST_ID
+		ORDER BY
+			CST_CREATE_DATE DESC
+	) AS FLAG_LAST
+FROM
+	BRONZE.CRM_CUST_INFO;
+
+SELECT * FROM 
+(SELECT
+	*,
+	ROW_NUMBER() OVER (
+		PARTITION BY
+			CST_ID
+		ORDER BY
+			CST_CREATE_DATE DESC
+	) AS FLAG_LAST
+FROM
+	BRONZE.CRM_CUST_INFO)t where flag_last <>1;
+
+SELECT * FROM 
+(SELECT
+	*,
+	ROW_NUMBER() OVER (
+		PARTITION BY
+			CST_ID
+		ORDER BY
+			CST_CREATE_DATE DESC
+	) AS FLAG_LAST
+FROM
+	BRONZE.CRM_CUST_INFO)t where flag_last =1;
+
+-- Check for unwanted spaces in string values
+SELECT
+    cst_firstname
+FROM
+    bronze.crm_cust_info
+WHERE
+    cst_firstname <> TRIM(cst_firstname);
+
+SELECT
+    cst_lastname
+FROM
+    bronze.crm_cust_info
+WHERE
+    cst_lastname <> TRIM(cst_lastname);
+
+-- Check for null or duplicates in primary key and trim spaces in strings
+-- we can say
+-- select distinct cst_gender from bronze.crm_cust_info; to show the possible distinct values within the column
+SELECT 
+cst_id,
+    cst_key,
+    trim (cst_firstname) as cst_firstname,
+    trim (cst_lastname) as cst_lastname,
+    cst_marital_status,
+    cst_gndr,
+    cst_create_date
+FROM 
+(SELECT
+	*,
+	ROW_NUMBER() OVER (
+		PARTITION BY
+			CST_ID
+		ORDER BY
+			CST_CREATE_DATE DESC
+	) AS FLAG_LAST
+FROM
+	BRONZE.CRM_CUST_INFO)t where flag_last =1;
