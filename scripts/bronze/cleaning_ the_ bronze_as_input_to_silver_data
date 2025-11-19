@@ -468,3 +468,92 @@ FROM
 SELECT * FROM SILVER.CRM_PRD_INFO;
 
 DERIVED COLUMNS AND DATA ENRICHMENT
+
+SELECT
+	*
+FROM
+	BRONZE.CRM_SALES_DETAILS;
+
+-- Check for invalid dates. -- Negative numbers or zeros can't be cast to a date
+SELECT
+    sls_order_dt
+FROM
+    bronze.crm_sales_details
+where sls_order_dt <= 0;
+
+-- NULLIF() returns NULL if two given values are equal; otherwise, 
+-- it returns the first expression.
+-- or check for the bounday of the date range
+SELECT
+	NULLIF(SLS_ORDER_DT, 0) SLS_ORDER_DT
+FROM
+	BRONZE.CRM_SALES_DETAILS
+WHERE
+	SLS_ORDER_DT <= 0
+	OR LENGTH(SLS_ORDER_DT::TEXT) <> 8
+	OR SLS_ORDER_DT > 20500101
+	OR SLS_ORDER_DT < 19000101;
+
+SELECT
+	SLS_ORD_NUM,
+	SLS_PRD_KEY,
+	SLS_CUST_ID,
+	SLS_ORDER_DT,
+	CASE WHEN SLS_ORDER_DT =0 OR LENGTH(SLS_ORDER_DT)<>8 THEN NULL
+	ELSE CAST (CAST(SLS_ORDER_DT AS CHARACTER VARYING) AS DATE)
+	SLS_SHIP_DT,
+	SLS_DUE_DT,
+	SLS_SALES,
+	SLS_QUANTITY,
+	SLS_PRICE
+FROM
+	BRONZE.CRM_SALES_DETAILS
+WHERE SLS_CUST_ID NOT IN (SELECT CST_ID FROM SILVER.CRM_CUST_INFO);
+
+SELECT
+	SLS_ORD_NUM,
+	SLS_PRD_KEY,
+	SLS_CUST_ID,
+	cast (SLS_ORDER_DT as Date) As SLS_ORDER_DT,
+	SLS_SHIP_DT,
+	SLS_DUE_DT,
+	SLS_SALES,
+	SLS_QUANTITY,
+	SLS_PRICE
+FROM
+	BRONZE.CRM_SALES_DETAILS
+WHERE SLS_ORD_NUM <>TRIM(SLS_ORD_NUM);
+
+SELECT
+	SLS_ORD_NUM,
+	SLS_PRD_KEY,
+	SLS_CUST_ID,
+	cast (SLS_ORDER_DT as Date) As SLS_ORDER_DT,
+	SLS_SHIP_DT,
+	SLS_DUE_DT,
+	SLS_SALES,
+	SLS_QUANTITY,
+	SLS_PRICE
+FROM
+	BRONZE.CRM_SALES_DETAILS
+WHERE SLS_PRD_KEY NOT IN (SELECT PRD_KEY FROM SILVER.CRM_PRD_INFO);
+
+SELECT
+	SLS_ORD_NUM,
+	SLS_PRD_KEY,
+	SLS_CUST_ID,
+	cast (SLS_ORDER_DT as Date) As SLS_ORDER_DT,
+	SLS_SHIP_DT,
+	SLS_DUE_DT,
+	SLS_SALES,
+	SLS_QUANTITY,
+	SLS_PRICE
+FROM
+	BRONZE.CRM_SALES_DETAILS
+WHERE SLS_PRD_KEY NOT IN (SELECT PRD_KEY FROM SILVER.CRM_PRD_INFO);
+
+\\copy bronze.crm_sales_details (
+sls_ord_num, sls_prd_key, sls_cust_id, sls_order_dt, sls_ship_dt, sls_due_dt, sls_sales, sls_quantity, sls_price) FROM '/Users/macmini4/Documents/sql-data-warehouse-project/datasets/source_crm/sales_details.csv' 
+WITH(FORMAT csv, DELIMITER ',', HEADER, QUOTE '\"', ESCAPE '''');
+
+
