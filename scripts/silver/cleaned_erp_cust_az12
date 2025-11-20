@@ -1,8 +1,52 @@
+INSERT INTO SILVER.ERP_CUST_AZ12 (
+CID, BDATE, GEN
+)
+SELECT
+	CASE
+		WHEN CID LIKE 'NAS%' THEN SUBSTRING(
+			CID
+			FROM
+				4
+		)
+		ELSE CID
+	END AS CID,
+	CASE WHEN BDATE > CURRENT_DATE THEN NULL
+		ELSE BDATE
+	END AS BDATE,
+	CASE
+		WHEN UPPER(TRIM(GEN)) IN ('F', 'FEMALE') THEN 'Female'
+		WHEN UPPER(TRIM(GEN)) IN ('M', 'MALE') THEN 'Male'
+		ELSE 'Null'
+	END AS GEN
+FROM
+	BRONZE.ERP_CUST_AZ12;
+
+-- the cleaned sql query above was derived from the data transformation below
+-- Checking for unmatched data in the silver schema customer info and the bronze_erp customer info IDS
+SELECT
+	CASE
+		WHEN CID LIKE 'NAS%' THEN SUBSTRING(
+			CID
+			FROM
+				4
+		)
+		ELSE CID
+	END AS CID,
+	BDATE,
+-- IDENTIFY OUT OF RANGE DATES
+	CASE WHEN BDATE > CURRENT_DATE THEN NULL
+		ELSE BDATE
+	END AS BDATE,
+-- DATA STANDARDIZATION & CONSISTENCY
+	GEN
+FROM
+	BRONZE.ERP_CUST_AZ12;
+
+Check the gender column
+select distinct gen
+from bronze.erp_cust_az12;
 
 
-
-
--- the first few lines are cleanned from the oao
 SELECT
 	CID,
 	CASE
@@ -31,3 +75,12 @@ WHERE CASE
 		FROM
 			SILVER.CRM_CUST_INFO
 	);
+
+-- check for very old and future customers 
+SELECT DISTINCT
+	BDATE
+FROM
+	BRONZE.ERP_CUST_AZ12
+WHERE
+	BDATE < '1924-01-01'
+	OR BDATE > CURRENT_DATE;
