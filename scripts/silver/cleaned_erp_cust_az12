@@ -16,3 +16,18 @@ SELECT
 	BDATE,
 	GEN
 	FROM BRONZE.ERP_CUST_AZ12;
+
+-- add the below query to the one above to check unmatched data between the silver schema customer info and the bronze_erp info
+WHERE CASE
+		WHEN CID LIKE 'NAS%' THEN SUBSTRING(
+			CID
+			FROM
+				4
+		)
+		ELSE CID
+	END NOT IN (
+		SELECT DISTINCT
+			CST_KEY
+		FROM
+			SILVER.CRM_CUST_INFO
+	);
