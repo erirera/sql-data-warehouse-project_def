@@ -1,3 +1,6 @@
+print '>> Truncating Table : SILVER.ERP_LOC_A101';
+truncate table SILVER.ERP_LOC_A101;
+print 'Inserting data into : SILVER.ERP_LOC_A101;
 INSERT INTO SILVER.ERP_LOC_A101 (
 CID, CNTRY
 )
