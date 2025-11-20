@@ -1,3 +1,6 @@
+print '>> Truncating Table : silver.crm_sales_details';
+truncate table silver.crm_sales_details;
+print 'Inserting data into : silver.crm_sales_details;
 -- INSERT CONTENT INTO THE SILVER SCHEMA
 INSERT INTO silver.crm_sales_details
 (
