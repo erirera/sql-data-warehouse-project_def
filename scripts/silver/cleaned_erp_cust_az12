@@ -1,0 +1,18 @@
+
+
+
+
+-- the first few lines are cleanned from the oao
+SELECT
+	CID,
+	CASE
+		WHEN CID LIKE 'NAS%' THEN SUBSTRING(
+			CID
+			FROM
+				4
+		)
+		ELSE CID
+	END AS CID,
+	BDATE,
+	GEN
+	FROM BRONZE.ERP_CUST_AZ12;
