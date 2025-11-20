@@ -17,7 +17,7 @@ SELECT
 	GEN
 	FROM BRONZE.ERP_CUST_AZ12;
 
--- add the below query to the one above to check unmatched data between the silver schema customer info and the bronze_erp info
+-- add the below query to the one above to check unmatched data between the silver schema customer info and the bronze_erp customer info
 WHERE CASE
 		WHEN CID LIKE 'NAS%' THEN SUBSTRING(
 			CID
