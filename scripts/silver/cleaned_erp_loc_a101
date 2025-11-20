@@ -2,8 +2,8 @@ INSERT INTO SILVER.ERP_LOC_A101 (
 CID, CNTRY
 )
 SELECT
-	REPLACE(CID, '-', '') CID,
-	CASE
+	REPLACE(CID, '-', '') CID, -- handling invalid values
+	CASE -- normalize and handle missing or blank country codes as well as removing spaces in texts
 		WHEN TRIM(CNTRY) = 'DE' THEN 'Germany'
 		WHEN TRIM(CNTRY) IN ('US', 'USA') THEN 'United States'
 		WHEN TRIM(CNTRY) = ''
