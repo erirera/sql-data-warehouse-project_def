@@ -7,9 +7,10 @@ SELECT
 			CID
 			FROM
 				4
-		)
+		) -- removes NAS prefix if present
 		ELSE CID
-	END AS CID,
+	END AS CID, 
+-- set future bdate to null
 	CASE WHEN BDATE > CURRENT_DATE THEN NULL
 		ELSE BDATE
 	END AS BDATE,
@@ -17,7 +18,7 @@ SELECT
 		WHEN UPPER(TRIM(GEN)) IN ('F', 'FEMALE') THEN 'Female'
 		WHEN UPPER(TRIM(GEN)) IN ('M', 'MALE') THEN 'Male'
 		ELSE 'Null'
-	END AS GEN
+	END AS GEN -- normal gender values and handle unknown cases
 FROM
 	BRONZE.ERP_CUST_AZ12;
 
