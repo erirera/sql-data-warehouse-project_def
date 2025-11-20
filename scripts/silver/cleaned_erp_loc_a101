@@ -1,0 +1,61 @@
+INSERT INTO SILVER.ERP_LOC_A101 (
+CID, CNTRY
+)
+SELECT
+	REPLACE(CID, '-', '') CID,
+	CASE
+		WHEN TRIM(CNTRY) = 'DE' THEN 'Germany'
+		WHEN TRIM(CNTRY) IN ('US', 'USA') THEN 'United States'
+		WHEN TRIM(CNTRY) = ''
+		OR CNTRY IS NULL THEN 'n/a'
+		ELSE TRIM(CNTRY)
+	END AS CNTRY
+FROM
+	BRONZE.ERP_LOC_A101;
+
+-- the 14 lines above came from the file as below
+SELECT
+	CID,
+	CNTRY
+FROM
+	BRONZE.ERP_LOC_A101;
+
+-- make cid the same as cst_key in the silver.crm_cust_info
+SELECT
+	REPLACE(CID, '-', '') CID,
+	CNTRY
+FROM
+	BRONZE.ERP_LOC_A101;
+
+SELECT
+	REPLACE(CID, '-', '') CID,
+	CASE
+		WHEN TRIM(CNTRY) = 'DE' THEN 'Germany'
+		WHEN TRIM(CNTRY) IN ('US', 'USA') THEN 'United States'
+		WHEN TRIM(CNTRY) = ''
+		OR CNTRY IS NULL THEN 'n/a'
+		ELSE TRIM(CNTRY)
+	END AS CNTRY
+FROM
+	BRONZE.ERP_LOC_A101;
+WHERE -- confirm it is the same as in silver.crm_cust_info
+	REPLACE(CID, '-', '') NOT IN (
+		SELECT
+			CST_KEY
+		FROM
+			SILVER.CRM_CUST_INFO
+	);
+-- data standardization & consistency
+SELECT DISTINCT
+	cntry as old_cntry,
+	CASE
+		WHEN TRIM(CNTRY) = 'DE' THEN 'Germany'
+		WHEN TRIM(CNTRY) IN ('US', 'USA') THEN 'United States'
+		WHEN TRIM(CNTRY) = ''
+		OR CNTRY IS NULL THEN 'n/a'
+		ELSE TRIM(CNTRY)
+	END AS CNTRY
+FROM
+	BRONZE.ERP_LOC_A101
+ORDER BY
+	CNTRY;
