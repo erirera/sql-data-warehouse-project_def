@@ -1,3 +1,6 @@
+print '>> Truncating Table : SILVER.ERP_CUST_AZ12';
+truncate table SILVER.ERP_CUST_AZ12;
+print 'Inserting data into : SILVER.ERP_CUST_AZ12;
 INSERT INTO SILVER.ERP_CUST_AZ12 (
 CID, BDATE, GEN
 )
