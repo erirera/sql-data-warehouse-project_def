@@ -1,3 +1,6 @@
+print '>> Truncating Table : SILVER.ERP_PX_CAT_G1V2';
+truncate table SILVER.ERP_PX_CAT_G1V2;
+print 'Inserting data into : SILVER.ERP_PX_CAT_G1V2;
 INSERT INTO
 	SILVER.ERP_PX_CAT_G1V2 (ID, CAT, SUBCAT, MAINTENANCE)
 SELECT
