@@ -13,7 +13,7 @@ CREATE TABLE SILVER.CRM_PRD_INFO (
 	DWH_CREATE_DATE timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
 print '>> Truncating Table : SILVER.CRM_PRD_INFO';
-truncate table sSILVER.CRM_PRD_INFO;
+truncate table SILVER.CRM_PRD_INFO;
 print 'Inserting data into : SILVER.CRM_PRD_INFO;
 INSERT INTO SILVER.CRM_PRD_INFO (
 	PRD_ID,
