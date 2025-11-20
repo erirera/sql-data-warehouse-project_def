@@ -1,0 +1,205 @@
+-- Create stored procedure to load insert into silver schema tables cleaned bronze data tables
+CREATE OR REPLACE PROCEDURE SILVER.LOAD_SILVER_DATA () LANGUAGE PLPGSQL AS $$
+BEGIN
+-- DATA STANDARDIZATION & CONSISTENCY 
+-- removing unwanted spaces, maps coded values to meaningful, 
+-- user-friendly descriptions (i.e. data normalization & standardization)
+-- handling missing values (fill in the blanks by adding a default value)
+-- ensuring only one record per entity by removing duplicates (identify and retaining the most relevant rows.
+-- (in doing this, there may be need to increase the character-length of the target columns)
+
+--PRINT (">> Truncating Table : silver.crm_cust_info");
+TRUNCATE TABLE silver.crm_cust_info;
+--PRINT 'Inserting data into : silver.crm_cust_info';
+INSERT INTO
+	SILVER.CRM_CUST_INFO (
+		CST_ID,
+		CST_KEY,
+		CST_FIRSTNAME,
+		CST_LASTNAME,
+		CST_MARITAL_STATUS,
+		CST_GNDR,
+		CST_CREATE_DATE
+	)
+SELECT
+	CST_ID,
+	CST_KEY,
+	TRIM(CST_FIRSTNAME) AS CST_FIRSTNAME,
+	TRIM(CST_LASTNAME) AS CST_LASTNAME,
+	CASE
+		WHEN UPPER(TRIM(CST_MARITAL_STATUS)) = 'S' THEN 'Single'
+		WHEN UPPER(TRIM(CST_MARITAL_STATUS)) = 'M' THEN 'Married'
+		ELSE 'N/A'
+	END AS CST_MARITAL_STATUS,
+	CASE
+		WHEN UPPER(TRIM(CST_GNDR)) = 'F' THEN 'female'
+		WHEN UPPER(TRIM(CST_GNDR)) = 'M' THEN 'Male'
+		ELSE 'N/A'
+	END AS CST_GNDR,
+	CST_CREATE_DATE
+FROM
+	(
+		SELECT
+			*,
+			ROW_NUMBER() OVER (
+				PARTITION BY
+					CST_ID
+				ORDER BY
+					CST_CREATE_DATE DESC
+			) AS FLAG_LAST
+		FROM
+			BRONZE.CRM_CUST_INFO
+	) AS T
+WHERE
+	FLAG_LAST = 1;
+--
+--print '>> Truncating Table : SILVER.CRM_PRD_INFO';
+truncate table SILVER.CRM_PRD_INFO;
+--print 'Inserting data into : SILVER.CRM_PRD_INFO';
+INSERT INTO SILVER.CRM_PRD_INFO (
+	PRD_ID,
+	CAT_ID,
+	PRD_KEY,
+	PRD_NM,
+	PRD_COST,
+	PRD_LINE,
+	PRD_START_DT,
+	PRD_END_DT
+)
+SELECT
+	PRD_ID,
+	REPLACE(SUBSTRING(PRD_KEY, 1, 5), '-', '_') AS CAT_ID,-- EXRACT CATEGORY ID
+-- Needs this to join with sales-details
+-- Needs this to join with sales-details: substring from the 7th character to end
+	SUBSTRING(
+		PRD_KEY
+		FROM
+			7
+	) AS PRD_KEY,-- EXTRACT PRODUCT ID
+	PRD_NM,
+-- Use COALESCE in Postgres instead of ISNULL, and ensure proper commas/aliases
+	COALESCE(PRD_COST, 0) AS PRD_COST, -- TO MAKE NULL ZERO
+	CASE UPPER(TRIM(PRD_LINE))
+		WHEN 'M' THEN 'Mountain'
+		WHEN 'R' THEN 'Road'
+		WHEN 'T' THEN 'Touring'
+		WHEN 'S' THEN 'Other Sales'
+		ELSE 'N/A'
+	END AS PRD_LINE,-- MAP PRODUCT LINE CODES TO DESCRIPTIVE VALUES
+	PRD_START_DT,
+	-- LEAD returns the next row's prd_start_dt within the same prd_key ordered by prd_start_dt
+    LEAD(prd_start_dt) OVER (
+        PARTITION BY prd_key
+        ORDER BY prd_start_dt
+    )-1 AS prd_end_dt -- CALCULATE END DATE AS ONE DAY BEFORE THE NEXT START DATE
+FROM
+	BRONZE.CRM_PRD_INFO;
+
+--print '>> Truncating Table : silver.crm_sales_details';
+truncate table silver.crm_sales_details;
+--print 'Inserting data into : silver.crm_sales_details';
+-- INSERT CONTENT INTO THE SILVER SCHEMA
+INSERT INTO silver.crm_sales_details
+(
+    sls_ord_num,
+    sls_prd_key,
+    sls_cust_id,
+    sls_order_dt,
+    sls_ship_dt,
+    sls_due_dt,
+    sls_sales,
+    sls_quantity,
+    sls_price
+)
+SELECT
+	SLS_ORD_NUM,
+	SLS_PRD_KEY,
+	SLS_CUST_ID,
+-- removing invalid data or converting to null in the order dates, shipping date and due date
+CASE WHEN SLS_ORDER_DT =0 OR LENGTH(SLS_ORDER_DT::TEXT)<>8 THEN NULL
+	ELSE CAST (CAST(SLS_ORDER_DT AS CHARACTER VARYING) AS DATE)
+END AS SLS_ORDER_DT,
+CASE WHEN SLS_SHIP_DT =0 OR LENGTH(SLS_SHIP_DT::TEXT)<>8 THEN NULL
+	ELSE CAST (CAST(SLS_SHIP_DT AS CHARACTER VARYING) AS DATE)
+END AS SLS_SHIP_DT,
+CASE WHEN SLS_DUE_DT =0 OR LENGTH(SLS_DUE_DT::TEXT)<>8 THEN NULL
+	ELSE CAST (CAST(SLS_DUE_DT AS CHARACTER VARYING) AS DATE)
+END AS SLS_DUE_DT,
+-- Recalculate sales if original value is missing or incorrect
+	CASE
+		WHEN SLS_SALES IS NULL
+		OR SLS_SALES <= 0
+		OR SLS_SALES <> SLS_QUANTITY * ABS(SLS_PRICE) THEN SLS_QUANTITY * ABS(SLS_PRICE)
+		ELSE SLS_SALES
+	END AS SLS_SALES,
+	SLS_QUANTITY,
+	CASE
+		WHEN SLS_PRICE IS NULL
+		OR SLS_PRICE <= 0 THEN SLS_SALES / NULLIF(SLS_QUANTITY, 0)
+		ELSE SLS_PRICE
+	END AS SLS_PRICE -- Derive price if original value is invalid
+
+FROM
+	BRONZE.CRM_SALES_DETAILS;
+
+--print '>> Truncating Table : SILVER.ERP_CUST_AZ12';
+truncate table SILVER.ERP_CUST_AZ12;
+--print 'Inserting data into : SILVER.ERP_CUST_AZ12';
+INSERT INTO SILVER.ERP_CUST_AZ12 (
+CID, BDATE, GEN
+)
+SELECT
+	CASE
+		WHEN CID LIKE 'NAS%' THEN SUBSTRING(
+			CID
+			FROM
+				4
+		) -- removes 'NAS' prefix if present
+		ELSE CID
+	END AS CID, 
+-- set future bdate to null
+	CASE WHEN BDATE > CURRENT_DATE THEN NULL
+		ELSE BDATE
+	END AS BDATE,
+	CASE
+		WHEN UPPER(TRIM(GEN)) IN ('F', 'FEMALE') THEN 'Female'
+		WHEN UPPER(TRIM(GEN)) IN ('M', 'MALE') THEN 'Male'
+		ELSE 'Null'
+	END AS GEN -- normal gender values and handle unknown cases
+FROM
+	BRONZE.ERP_CUST_AZ12;
+
+--print '>> Truncating Table : SILVER.ERP_LOC_A101';
+truncate table SILVER.ERP_LOC_A101;
+--print 'Inserting data into : SILVER.ERP_LOC_A101';
+INSERT INTO SILVER.ERP_LOC_A101 (
+CID, CNTRY
+)
+SELECT
+	REPLACE(CID, '-', '') CID, -- handling invalid values
+	CASE -- normalize and handle missing or blank country codes as well as removing spaces in texts
+		WHEN TRIM(CNTRY) = 'DE' THEN 'Germany'
+		WHEN TRIM(CNTRY) IN ('US', 'USA') THEN 'United States'
+		WHEN TRIM(CNTRY) = ''
+		OR CNTRY IS NULL THEN 'n/a'
+		ELSE TRIM(CNTRY)
+	END AS CNTRY
+FROM
+	BRONZE.ERP_LOC_A101;
+
+truncate table SILVER.ERP_PX_CAT_G1V2;
+--print 'Inserting data into : SILVER.ERP_PX_CAT_G1V2';
+INSERT INTO
+	SILVER.ERP_PX_CAT_G1V2 (ID, CAT, SUBCAT, MAINTENANCE)
+SELECT
+	ID,
+	CAT,
+	SUBCAT,
+	MAINTENANCE
+FROM
+	BRONZE.ERP_PX_CAT_G1V2;
+END;
+$$;
+
+--To Execute 
+CALL SILVER.LOAD_SILVER_DATA ();
