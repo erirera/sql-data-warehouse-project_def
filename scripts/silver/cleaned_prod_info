@@ -53,4 +53,263 @@ FROM
 
 --- THE 52 LINES ABOVE CAME FROM THE DATA TRANSFORMATIONS BELOW
 
+--FOR PRODUCT INFO AND CONSIDERATION THE RELATED SOURCE DATA
+	
+SELECT
+	PRD_ID,
+	PRD_KEY,
+	REPLACE (SUBSTRING(PRD_KEY, 1, 5), '-','_') AS CAT_ID,
+	PRD_NM,
+	PRD_COST,
+	PRD_LINE,
+	PRD_START_DT,
+	PRD_END_DT
+FROM
+	BRONZE.CRM_PRD_INFO
+	ORDER BY CAT_ID;
+
+SELECT DISTINCT
+	ID
+FROM
+	BRONZE.ERP_PX_CAT_G1V2;
+
+SELECT
+	PRD_ID,
+	PRD_KEY,
+	REPLACE(SUBSTRING(PRD_KEY, 1, 5), '-', '_') AS CAT_ID,
+	PRD_NM,
+	PRD_COST,
+	PRD_LINE,
+	PRD_START_DT,
+	PRD_END_DT
+FROM
+	BRONZE.CRM_PRD_INFO
+	-- to filter out unmatched data after applying transformation to join with another file bronze.erp_px_cat_g1v2
+WHERE
+	REPLACE(SUBSTRING(PRD_KEY, 1, 5), '-', '_') NOT IN (
+		SELECT DISTINCT
+			ID
+		FROM
+			BRONZE.ERP_PX_CAT_G1V2
+	);
+
+SELECT
+	PRD_ID,
+	PRD_KEY As original_prd_key,
+-- Needs this to join with sales-details
+	SUBSTRING(PRD_KEY from 7) as prd_key,
+	PRD_NM,
+	PRD_COST,
+	PRD_LINE,
+	PRD_START_DT,
+	PRD_END_DT
+FROM
+	BRONZE.CRM_PRD_INFO
+	-- to filter out unmatched data after applying transformation
+WHERE
+	SUBSTRING(PRD_KEY from 7) NOT IN (
+		SELECT
+			sls_prd_key
+		FROM
+			BRONZE.CRM_SALES_DETAILS
+	);
+
+SELECT
+	PRD_ID,
+	PRD_KEY As original_prd_key,
+-- Needs this to join with sales-details
+	SUBSTRING(PRD_KEY from 7) as prd_key,
+	PRD_NM,
+	PRD_COST,
+	PRD_LINE,
+	PRD_START_DT,
+	PRD_END_DT
+FROM
+	BRONZE.CRM_PRD_INFO
+	-- to filter out unmatched data after applying transformation
+WHERE
+	SUBSTRING(PRD_KEY from 7) NOT IN (
+		SELECT
+			sls_prd_key
+		FROM
+			BRONZE.CRM_SALES_DETAILS
+	where sls_prd_key like 'FK-1639');
+
+SELECT
+	PRD_ID,
+	PRD_KEY As original_prd_key,
+-- Needs this to join with sales-details
+	SUBSTRING(PRD_KEY from 7) as prd_key,
+	PRD_NM,
+	PRD_COST,
+	PRD_LINE,
+	PRD_START_DT,
+	PRD_END_DT
+FROM
+	BRONZE.CRM_PRD_INFO
+	-- to filter out unmatched data after applying transformation
+WHERE
+	SUBSTRING(PRD_KEY from 7) IN (
+		SELECT
+			sls_prd_key
+		FROM
+			BRONZE.CRM_SALES_DETAILS
+);
+
+-- Check for unwanted Spaces
+-- Expectation: No Results
+Select prd_nm
+FROM bronze.crm_prd_info
+WHERE prd_nm <> TRIM (prd_nm);
+
+
+-- Check for Nulls or Negative Numbers
+-- Expectation: No Results
+Select prd_cost
+FROM bronze.crm_prd_info
+WHERE prd_cost < 0 or prd_cost is null;
+
+SELECT
+    prd_id,
+    prd_key AS original_prd_key,
+    -- Needs this to join with sales-details: substring from the 7th character to end
+    SUBSTRING(prd_key FROM 7) AS prd_key,
+    prd_nm,
+    prd_cost,
+    -- Use COALESCE in Postgres instead of ISNULL, and ensure proper commas/aliases
+    COALESCE(prd_cost, 0) AS prd_cost1,
+    prd_line,
+    prd_start_dt,
+    prd_end_dt
+FROM
+    bronze.crm_prd_info;
+
+SELECT
+    prd_id,
+    prd_key AS original_prd_key,
+    -- Needs this to join with sales-details: substring from the 7th character to end
+    SUBSTRING(prd_key FROM 7) AS prd_key,
+    prd_nm,
+    prd_cost,
+    -- Use COALESCE in Postgres instead of ISNULL, and ensure proper commas/aliases
+    COALESCE(prd_cost, 0) AS prd_cost1,
+    prd_line,
+	CASE
+		WHEN UPPER(TRIM(prd_line)) = 'M' THEN 'Mountain'
+		WHEN UPPER(TRIM(prd_line)) = 'R' THEN 'Road'
+		WHEN UPPER(TRIM(prd_line)) = 'T' THEN 'Touring'
+		WHEN UPPER(TRIM(prd_line)) = 'S' THEN 'Other Sales'
+		ELSE 'N/A'
+	END AS prd_line,
+    prd_start_dt,
+    prd_end_dt
+FROM
+    bronze.crm_prd_info;
+
+--- Other way
+SELECT
+	PRD_ID,
+	PRD_KEY AS ORIGINAL_PRD_KEY,
+	-- Needs this to join with sales-details: substring from the 7th character to end
+	SUBSTRING(
+		PRD_KEY
+		FROM
+			7
+	) AS PRD_KEY,
+	PRD_NM,
+	PRD_COST,
+	-- Use COALESCE in Postgres instead of ISNULL, and ensure proper commas/aliases
+	COALESCE(PRD_COST, 0) AS PRD_COST1,
+	PRD_LINE,
+	CASE UPPER(TRIM(PRD_LINE))
+		WHEN 'M' THEN 'Mountain'
+		WHEN 'R' THEN 'Road'
+		WHEN 'T' THEN 'Touring'
+		WHEN 'S' THEN 'Other Sales'
+		ELSE 'N/A'
+	END AS PRD_LINE,
+	PRD_START_DT,
+	-- LEAD returns the next row's prd_start_dt within the same prd_key ordered by prd_start_dt
+    LEAD(prd_start_dt) OVER (
+        PARTITION BY prd_key
+        ORDER BY prd_start_dt
+    )-1 AS prd_end_dt
+FROM
+	BRONZE.CRM_PRD_INFO;
+	-- to filter out unmatched data after applying transformation
+WHERE
+	SUBSTRING(
+		PRD_KEY
+		FROM
+			7
+	) IN (
+		SELECT
+			SLS_PRD_KEY
+		FROM
+			BRONZE.CRM_SALES_DETAILS
+	);
+
+-- Check for unwanted Spaces
+-- Expectation: No Results
+Select prd_nm
+FROM bronze.crm_prd_info
+WHERE prd_nm <> TRIM (prd_nm);
+
+
+-- Check for Nulls or Negative Numbers
+-- Expectation: No Results
+Select prd_cost
+FROM bronze.crm_prd_info
+WHERE prd_cost < 0 or prd_cost is null;
+
+-- Data Standardization & Consistency
+Select distinct prd_line
+FROM bronze.crm_prd_info;
+
+-- Check invalid date orders
+SELECT
+	*
+FROM
+	BRONZE.CRM_PRD_INFO
+	-- End date must not be earlier than the start date
+WHERE
+	PRD_END_DT < PRD_start_dt;
+
+-- if this is true, then it must be corrected
+-- for complex transformations in SQL, it is better to narrow
+-- down to a specific example and brainstorm multiple solutions
+-- Each record must have a start date
+-- Solution 1, swap the end date and start date
+-- Solution 2, derive end date from the start date from a few data records in excel. That means end date = start date fo the next record
+-- testing for only two cases
+SELECT
+    prd_id,
+    prd_key,
+    prd_nm,
+    prd_start_dt,
+    prd_end_dt,
+    -- LEAD returns the next row's prd_start_dt within the same prd_key ordered by prd_start_dt
+    LEAD(prd_start_dt) OVER (
+        PARTITION BY prd_key
+        ORDER BY prd_start_dt
+    )-1 AS prd_end_dt_test
+FROM
+    bronze.crm_prd_info
+WHERE
+    prd_key IN ('AC-HE-HL-U509-R', 'AC-HE-HL-U509');
+
+--testing for the whole case
+SELECT
+    prd_id,
+    prd_key,
+    prd_nm,
+    prd_start_dt,
+    -- LEAD returns the next row's prd_start_dt within the same prd_key ordered by prd_start_dt
+    LEAD(prd_start_dt) OVER (
+        PARTITION BY prd_key
+        ORDER BY prd_start_dt
+    )-1 AS prd_end_dt
+FROM
+    bronze.crm_prd_info;
+
 
