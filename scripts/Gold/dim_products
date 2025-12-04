@@ -1,0 +1,19 @@
+CREATE VIEW GOLD.DIM_PRODUCTS AS -- CREATE PRODUCT VIEW IN GOLD SCHEMA
+SELECT PRD_KEY, COUNT(*) FROM -- check for duplicates in PRODUCT KEY
+(SELECT 
+pn.prd_id,
+pn.cat_id,
+pn.prd_key,
+pn.prd_nm,
+pn.prd_cost,
+pn.prd_line,
+pn.prd_start_dt,
+pn.prd_end_dt,
+pc.cat,
+pc.subcat,
+pc.maintenance
+FROM
+SILVER.CRM_PRD_INFO PN
+LEFT JOIN SILVER.ERP_PX_CAT_G1V2 PC ON PN.CAT_ID = PC.ID
+WHERE PRD_END_DT IS NULL) T -- Filter out historical data. Limit to the current data
+GROUP BY PRD_KEY HAVING COUNT(*)>1; 
