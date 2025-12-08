@@ -45,3 +45,90 @@ FROM gold.fact_sales
 WHERE order_date IS NOT NULL
 GROUP BY date_trunc('month', order_date)
 ORDER BY date_trunc('month', order_date);
+
+/*
+===============================================================================
+Cumulative Analysis
+===============================================================================
+Purpose:
+    - To calculate running totals or moving averages for key metrics.
+    - To track performance over time cumulatively.
+    - Useful for growth analysis or identifying long-term trends.
+
+SQL Functions Used:
+    - Window Functions: SUM() OVER(), AVG() OVER()
+===============================================================================
+*/
+
+-- Calculate the total sales per month 
+-- and the running total of sales over time 
+-- calendar year (start timestamp), formatted totals and average
+SELECT
+	year_start,
+	total_sales,
+	SUM(total_sales) OVER (ORDER BY year_start) AS running_total_sales,
+	AVG(avg_price) OVER (ORDER BY year_start) AS moving_average_price
+FROM
+(
+    SELECT
+  date_trunc('year', order_date)      AS year_start,
+  SUM(sales)::numeric(18,2)           AS total_sales,
+  ROUND(AVG(price)::numeric, 2)       AS avg_price
+FROM gold.fact_sales
+WHERE order_date IS NOT NULL
+GROUP BY 1
+ORDER BY 1
+) t
+
+-- calendar month (start timestamp), formatted totals and average
+SELECT
+	month_start,
+	total_sales,
+	SUM(total_sales) OVER (ORDER BY month_start) AS running_total_sales,
+	AVG(avg_price) OVER (ORDER BY month_start) AS moving_average_price
+FROM
+(
+    SELECT
+  date_trunc('month', order_date)      AS month_start,
+  SUM(sales)::numeric(18,2)           AS total_sales,
+  ROUND(AVG(price)::numeric, 2)       AS avg_price
+FROM gold.fact_sales
+WHERE order_date IS NOT NULL
+GROUP BY 1
+ORDER BY 1
+) t
+-- Alternative year as integer (easier for joins/labels)
+SELECT
+	year,
+	total_sales,
+	SUM(total_sales) OVER (ORDER BY year) AS running_total_sales,
+	AVG(avg_price) OVER (ORDER BY year) AS moving_average_price
+FROM
+(
+    SELECT
+  EXTRACT(YEAR FROM order_date)::int AS year,
+  SUM(sales)::numeric(18,2)           AS total_sales,
+  ROUND(AVG(price)::numeric, 3)       AS avg_price
+FROM gold.fact_sales
+WHERE order_date IS NOT NULL
+GROUP BY 1
+ORDER BY 1
+) t
+
+-- Alternative month as integer (easier for joins/labels)
+SELECT
+	month,
+	total_sales,
+	SUM(total_sales) OVER (ORDER BY month) AS running_total_sales,
+	AVG(avg_price) OVER (ORDER BY month) AS moving_average_price
+FROM
+(
+    SELECT
+  EXTRACT(month FROM order_date)::int AS month,
+  SUM(sales)::numeric(18,2)           AS total_sales,
+  ROUND(AVG(price)::numeric, 2)       AS avg_price
+FROM gold.fact_sales
+WHERE order_date IS NOT NULL
+GROUP BY 1
+ORDER BY 1
+) t
