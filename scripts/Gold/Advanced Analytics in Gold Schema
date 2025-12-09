@@ -237,5 +237,8 @@ SELECT
         (total_sales::numeric / NULLIF(SUM(total_sales) OVER (), 0)) * 100,
         2
     ) AS percentage_of_total
+-- CONCAT(ROUND(
+        (total_sales::numeric / NULLIF(SUM(total_sales) OVER (), 0)) * 100,
+        2),'%'
 FROM category_sales
 ORDER BY total_sales DESC;
