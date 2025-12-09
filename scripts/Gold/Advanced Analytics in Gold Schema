@@ -288,6 +288,12 @@ Rules:
 Notes:
  - lifespan_months is computed via age(max_order, min_order) and converted to months.
  - total_spending uses COALESCE to treat no-sales as 0.
+ - DATE_PART computes each customer's lifespan in whole months (difference between their first and last order) and returns 0 when there are no orders.
+ - MIN(f.order_date) and MAX(f.order_date): Find the earliest and latest order dates per customer (or per grouping in the surrounding aggregate).
+	age(MAX(...), MIN(...)). 
+	- DATE_PART('year', ...) * 12 + DATE_PART('month', ...): Converts years to months and add the remaining months to get total whole months.
+	- (...)::int: Cast the result to integer (truncates if it were fractional — though DATE_PART here returns numeric integer parts already).
+	- COALESCE(..., 0) If any part of the calculation is NULL (for example MIN or MAX are NULL because the customer has no orders), COALESCE returns 0 instead of NULL.
 */
 WITH customer_spending AS (
     SELECT
