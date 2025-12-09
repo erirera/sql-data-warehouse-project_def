@@ -15,7 +15,7 @@ WITH base_query AS (
         f.order_number,
         f.order_date::date AS order_date,
         f.customer_key,
-        f.sales_amount,
+        f.sales,
         f.quantity,
         p.product_key,
         p.product_name,
@@ -42,9 +42,9 @@ product_aggregations AS (
         MAX(order_date) AS last_sale_date,
         COUNT(DISTINCT order_number) AS total_orders,
         COUNT(DISTINCT customer_key) AS total_customers,
-        SUM(sales_amount) AS total_sales,
+        SUM(sales) AS total_sales,
         SUM(quantity) AS total_quantity,
-        ROUND(AVG((sales_amount::numeric / NULLIF(quantity, 0)::numeric)), 1) AS avg_selling_price
+        ROUND(AVG((sales::numeric / NULLIF(quantity, 0)::numeric)), 1) AS avg_selling_price
     FROM base_query
     GROUP BY
         product_key,
